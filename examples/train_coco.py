@@ -22,7 +22,7 @@ import keras.preprocessing.image
 
 import tensorflow as tf
 
-from keras_retinanet.models import ResNet50RetinaNet
+from keras_retinanet.models import ResNet50RetinaNet, MobilenetRetinaNet
 from keras_retinanet.preprocessing.coco import CocoGenerator
 import keras_retinanet
 
@@ -33,10 +33,14 @@ def get_session():
     return tf.Session(config=config)
 
 
-def create_model(weights='imagenet'):
+def create_model(architecture, weights='imagenet'):
     image = keras.layers.Input((None, None, 3))
-    return ResNet50RetinaNet(image, num_classes=80, weights=weights)
-
+    if architecture == 'mobilenet':
+        return MobilenetRetinaNet(image, num_classes=80, weights=weights)
+    elif architecture == 'resnet50':
+        return ResNet50RetinaNet(image, num_classes=80, weights=weights)
+    else:
+        raise ValueError('Unknown architecture')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Simple training script for COCO object detection.')
@@ -44,6 +48,8 @@ def parse_args():
     parser.add_argument('--weights', help='Weights to use for initialization (defaults to ImageNet).', default='imagenet')
     parser.add_argument('--batch-size', help='Size of the batches.', default=1, type=int)
     parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--arch', help='Architecture to use (currently supports mobilenet or resnet50).', default='resnet50')
+
 
     return parser.parse_args()
 
@@ -58,7 +64,7 @@ if __name__ == '__main__':
 
     # create the model
     print('Creating model, this may take a second...')
-    model = create_model(weights=args.weights)
+    model = create_model(architecture=args.arch, weights=args.weights)
 
     # compile model (note: set loss to None since loss is added inside layer)
     model.compile(
@@ -82,17 +88,21 @@ if __name__ == '__main__':
     train_generator = CocoGenerator(
         args.coco_path,
         'train2017',
-        train_image_data_generator,
-        batch_size=args.batch_size
+        filter_empty_images=True,
+        group_method='random',
+        image_data_generator=train_image_data_generator,
+        batch_size=args.batch_size,
     )
 
     # create a generator for testing data
     test_generator = CocoGenerator(
         args.coco_path,
         'val2017',
-        test_image_data_generator,
-        batch_size=args.batch_size
+        filter_empty_images=True,
+        image_data_generator=test_image_data_generator,
+        batch_size=args.batch_size,
     )
+
 
     # start training
     model.fit_generator(

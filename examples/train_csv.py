@@ -22,7 +22,7 @@ import keras.preprocessing.image
 
 import tensorflow as tf
 
-from keras_retinanet.models import ResNet50RetinaNet
+from keras_retinanet.models import ResNet50RetinaNet, MobilenetRetinaNet
 from keras_retinanet.preprocessing.csv_generator import CSVGenerator
 import keras_retinanet
 
@@ -32,11 +32,14 @@ def get_session():
     config.gpu_options.allow_growth = True
     return tf.Session(config=config)
 
-
-def create_model(num_classes, weights='imagenet'):
+def create_model(architecture, num_classes, weights='imagenet'):
     image = keras.layers.Input((None, None, 3))
-    return ResNet50RetinaNet(image, num_classes=num_classes, weights=weights)
-
+    if architecture == 'mobilenet':
+        return MobilenetRetinaNet(image, num_classes=num_classes, weights=weights)
+    elif architecture == 'resnet50':
+        return ResNet50RetinaNet(image, num_classes=num_classes, weights=weights)
+    else:
+        raise ValueError('Unknown architecture')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Simple training script for object detection from a CSV file.')
@@ -47,6 +50,7 @@ def parse_args():
                         default='imagenet')
     parser.add_argument('--batch-size', help='Size of the batches.', default=1, type=int)
     parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--arch', help='Architecture to use (currently supports mobilenet or resnet50).', default='resnet50')
 
     return parser.parse_args()
 
@@ -87,7 +91,7 @@ if __name__ == '__main__':
 
     # create the model
     print('Creating model, this may take a second...')
-    model = create_model(num_classes=num_classes, weights=args.weights)
+    model = create_model(architecture=args.arch, num_classes=num_classes, weights=args.weights)
 
     # compile model (note: set loss to None since loss is added inside layer)
     model.compile(

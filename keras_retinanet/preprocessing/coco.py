@@ -24,7 +24,7 @@ from pycocotools.coco import COCO
 
 
 class CocoGenerator(keras_retinanet.preprocessing.Generator):
-    def __init__(self, data_dir, set_name, *args, filter_empty_images=True, **kwargs):
+    def __init__(self, data_dir, set_name, filter_empty_images=True,  *args, **kwargs):
         self.data_dir  = data_dir
         self.set_name  = set_name
         self.coco      = COCO(os.path.join(data_dir, 'annotations', 'instances_' + set_name + '.json'))

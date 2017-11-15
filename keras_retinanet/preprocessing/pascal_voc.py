@@ -53,11 +53,11 @@ class PascalVocGenerator(keras_retinanet.preprocessing.Generator):
         self,
         data_dir,
         set_name,
-        *args,
         classes=voc_classes,
         image_extension='.jpg',
         skip_truncated=False,
         skip_difficult=False,
+        *args,
         **kwargs
     ):
         self.data_dir             = data_dir
